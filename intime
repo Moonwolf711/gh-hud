@@ -1,0 +1,8 @@
+while running:
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glUseProgram(noteShader)
+    draw_lanes()
+    draw_notes()    # binds VBO, sets uniform MVP, draws quads
+    glUseProgram(0)
+    draw_text_overlay()
+    pygame.display.flip()
