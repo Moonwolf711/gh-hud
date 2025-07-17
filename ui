@@ -1,0 +1,73 @@
+# After setting up an OpenGL context with pygame+PyOpenGL…
+
+LANE_COUNT = 5
+LANE_WIDTH = 0.2
+LANE_GAP   = 0.05
+LANE_DEPTH = 5.0  # how far into the scene lanes extend
+
+# Precompute lane X positions so lanes are centered around X=0
+lane_positions = [((i - (LANE_COUNT-1)/2) * (LANE_WIDTH + LANE_GAP))
+                  for i in range(LANE_COUNT)]
+
+def draw_lanes():
+    glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glColor4f(0.1, 0.1, 0.1, 0.4)  # dark gray, partly transparent
+    for x in lane_positions:
+        glBegin(GL_QUADS)
+        # top-left, top-right, bottom-right, bottom-left
+        glVertex3f(x - LANE_WIDTH/2,  1.0, 0.0)
+        glVertex3f(x + LANE_WIDTH/2,  1.0, 0.0)
+        glVertex3f(x + LANE_WIDTH/2, -1.0, -LANE_DEPTH)
+        glVertex3f(x - LANE_WIDTH/2, -1.0, -LANE_DEPTH)
+        glEnd()
+    glDisable(GL_BLEND)
+// vertex.glsl
+#version 330
+layout(location = 0) in vec3 in_pos;
+layout(location = 1) in float in_time; // normalized note time [0–1]
+uniform mat4 MVP;
+out float v_time;
+void main() {
+    v_time = in_time;
+    gl_Position = MVP * vec4(in_pos, 1.0);
+}
+
+// fragment.glsl
+#version 330
+in float v_time;
+out vec4 fragColor;
+void main() {
+    // color transitions: green early (v_time≈0) → yellow → red late (v_time≈1)
+    vec3 baseColor = mix(vec3(0.0,1.0,0.0), vec3(1.0,0.0,0.0), v_time);
+    // glow via radial alpha ramp
+    float glow = exp(-pow( (length(gl_FragCoord.xy - vec2(400,300)) / 200.0), 2.0 ));
+    // depth fade: more distant notes darker
+    float depthFade = 1.0 - smoothstep(0.0, 1.0, v_time);
+    fragColor = vec4(baseColor * depthFade, 0.8 * glow);
+}
+# after drawing all 3D lanes & notes, switch to orthographic for UI
+glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity()
+glOrtho(0, WIDTH, HEIGHT, 0, -1, 1)
+glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadIdentity()
+
+# Render Pygame text into a texture, then blit as a quad
+def draw_text(x, y, text, size=24, color=(255,255,255)):
+    font = pygame.font.SysFont("Arial", size, bold=True)
+    surf = font.render(text, True, color)
+    data = pygame.image.tostring(surf, "RGBA", True)
+    w, h = surf.get_size()
+    tex = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, tex)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
+    glEnable(GL_TEXTURE_2D)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0,0); glVertex2f(x,   y)
+    glTexCoord2f(1,0); glVertex2f(x+w, y)
+    glTexCoord2f(1,1); glVertex2f(x+w, y+h)
+    glTexCoord2f(0,1); glVertex2f(x,   y+h)
+    glEnd()
+    glDeleteTextures([tex])
+
+# Example usage in your render loop
+draw_text(20, 20, f"Score: {score}", size=32)
+draw_text(WIDTH-200, 20, f"Combo: {combo}", size=32)
