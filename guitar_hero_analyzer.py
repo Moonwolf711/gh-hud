@@ -87,7 +87,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Read audio data (ignore overflow if callbacks fall behind)
+    # Read audio data while ignoring overflow if callbacks fall behind
     raw_data = stream.read(CHUNK, exception_on_overflow=False)
     data = np.frombuffer(raw_data, np.float32)
 
