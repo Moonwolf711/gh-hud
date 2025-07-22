@@ -1,47 +1,70 @@
 # gh-hud
 
-This repository contains a small MIDI HUD experiment. The main script
-`guitar_hero_analyzer.py` listens to your microphone, detects the
-fundamental frequency and sends MIDI messages to the selected output
-port while displaying the note on screen.
+This repository hosts a small demo that combines a VS Code extension with a
+Node.js server and a Flutter mobile application. The goal is to present a
+heads‑up display (HUD) that reflects events occurring inside the editor in real
+time. The server acts as the communication hub while the extension and mobile
+app provide the user interfaces.
 
-## Requirements
+## Prerequisites
 
-Install the following Python packages before running the analyzer:
+Before setting up the project you will need the following software installed:
 
-- numpy
-- pygame
-- mido
-- PyAudio
+- **Node.js** (version 16 or later)
+- **Flutter SDK** (any stable channel release)
+- **Visual Studio Code** with the ability to load extensions from this
+  repository
 
-They can be installed with pip:
+## Node server setup
 
-```bash
-pip install numpy pygame mido PyAudio
-```
+1. Navigate to the `server` directory:
+   ```bash
+   cd server
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the server:
+   ```bash
+   npm start
+   ```
+   The server exposes endpoints and WebSocket channels used by both the VS Code
+   extension and the Flutter application.
 
-PyAudio may require additional system packages such as the PortAudio
-libraries. Refer to your platform's instructions if the installation fails.
+## Flutter application setup
 
-## Running the analyzer
+1. Navigate to the `flutter_app` directory:
+   ```bash
+   cd flutter_app
+   ```
+2. Fetch packages:
+   ```bash
+   flutter pub get
+   ```
+3. Run the application on an emulator or device:
+   ```bash
+   flutter run
+   ```
+   The app will connect to the running Node server to display HUD information.
 
-After installing the dependencies, run:
+## How the extension and server work together
 
-```bash
-python guitar_hero_analyzer.py
-```
+The VS Code extension monitors your workspace for events (such as file changes
+or test runs). It sends these events to the Node server using a lightweight
+protocol. The server aggregates and streams the data to any connected Flutter
+clients, allowing the mobile HUD to stay in sync with your editor. Make sure the
+server is running before launching the extension and the Flutter app.
 
-A small window opens showing the detected note and frequency. MIDI
-`note_on`/`note_off` messages are sent for the active note along with a
-subtle pitch bend.
+## Contributing
 
-## MIDI output notes
+Contributions are welcome! To propose a change:
 
-The script opens the default MIDI output returned by `mido`. If you have
-multiple ports, call `mido.get_output_names()` to list them and replace
-`mido.open_output()` with `mido.open_output('Your Port Name')`.
+1. Fork this repository and create a feature branch.
+2. Follow existing code style conventions (`prettier` for JavaScript, `flutter
+   format` for Dart).
+3. Commit your changes and open a pull request describing your work.
+4. Please ensure any major design decisions are discussed in an issue first.
 
-Any hardware or virtual MIDI device capable of receiving these messages
-can be used. On systems without physical MIDI hardware you can use a
-virtual loopback port (e.g. LoopMIDI on Windows or a2jmidid/virtual
-MIDI on Linux) to route the messages to a synthesizer or DAW.
+This project is released under the MIT License. By contributing you agree that
+any code submitted may be distributed under that license.
